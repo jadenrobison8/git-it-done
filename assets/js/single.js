@@ -1,4 +1,23 @@
 var issueContainerEl = document.querySelector("#issues-container");
+var limitWarningEl = document.querySelector("#limit-warning");
+var repoNameEl = document.querySelector("#repo-name");
+
+var getRepoName = function() {
+    //grab repo name from url query string
+    var queryString = document.location.search;
+    var repoName = queryString.split("=")[1];
+
+
+    if (repoName) {
+        //display repo name on the page
+        repoNameEl.textContent = repoName;
+
+        getRepoIssues(repoName);
+    } else {
+        //if no repo was given, redirect to the homepage
+        document.location.replace("./index.html");
+    }
+};
 
 var getRepoIssues = function(repo) {
     console.log(repo);
@@ -10,15 +29,24 @@ var getRepoIssues = function(repo) {
             response.json().then(function(data) {
                 //pass response data to dom function
                 displayIssues(data);
+
+                //check if api has paginated issues
+                if (response.headers.get("Link")) {
+                    displayWarning(repo);
+                }
             });
-        }
-        else {
-            alert("There was a problem with your request!");
+        } else {
+            document.location.replace("./index.html");
         }
     });
 };
 
 var displayIssues = function(issues) {
+    if (issues.length === 0) {
+        issueContainerEl.textContent = "This repo has no open issues!";
+        return;
+    }
+    
     for (var i = 0; i < issues.length; i++) {
         //create a link element to take users to the issue on github
         var issueEl = document.createElement("a");
@@ -48,7 +76,23 @@ var displayIssues = function(issues) {
 
         issueContainerEl.appendChild(issueEl);
     }
-
 };
 
-getRepoIssues("facebook/react");
+var displayWarning = function(repoName) {
+    //add text to warning container
+    limitWarningEl.textContent = "To see more than 30 issues, visit ";
+
+    var linkEl = document.createElement("a");
+    linkEl.textContent = "See more Issues on GitHib.com";
+    linkEl.setAttribute("href", "https://github.com" + repoName + "/issues");
+    linkEl.setAttribute("target", "_blank");
+
+    //append to warning container
+    limitWarningEl.appendChild(linkEl);
+};
+
+//getRepoIssues("facebook/react");
+
+//getRepoIssues("microsoft/activities");
+
+getRepoName();
